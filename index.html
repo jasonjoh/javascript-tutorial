@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Outlook SPA Demo</title>
+  <link href="//ajax.aspnetcdn.com/ajax/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="//ajax.aspnetcdn.com/ajax/bootstrap/3.3.6/css/bootstrap-theme.min.css" rel="stylesheet">
+  <link href="style.css" rel="stylesheet" type="text/css" />
+  
+  <script src="//ajax.aspnetcdn.com/ajax/jQuery/jquery-2.2.3.min.js"></script>
+  <script src="//ajax.aspnetcdn.com/ajax/bootstrap/3.3.6/bootstrap.min.js"></script>
+  <script src="//kjur.github.io/jsrsasign/jsrsasign-latest-all-min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.min.js"></script>
+  <script src="outlook-demo.js"></script>
+</head>
+
+<body>
+  <nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">Outlook SPA Demo</a>
+      </div>
+      <div id="navbar" class="navbar-collapse collapse">
+        <ul class="nav navbar-nav authed-nav">
+          <li id='home-nav'><a href="#">Home</a></li>
+          <li id='inbox-nav'><a href="#inbox">Inbox</a></li>
+          <li id='calendar-nav'><a href="#calendar">Calendar</a></li>
+          <li id='contacts-nav'><a href="#contacts">Contacts</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right authed-nav">
+          <li><a href="#signout">Sign out</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container main-container">
+    <div id="signin-prompt" class="jumbotron page">
+      <h1>Outlook SPA Demo</h1>
+      <p>This example shows how to get an OAuth token from Azure using the <a href="https://azure.microsoft.com/en-us/documentation/articles/active-directory-v2-protocols-implicit/">implicit grant flow</a> and to use that token to make calls to the Outlook APIs.</p>
+      <p>
+        <a class="btn btn-lg btn-primary" href="#" role="button" id="connect-button">Connect to Outlook</a>
+      </p>
+    </div>
+    
+    <!-- logged in user welcome -->
+    <div id="logged-in-welcome" class="jumbotron page">
+      <h1>Outlook SPA Demo</h1>
+      <p>Welcome <span id="username"></span>! Please use the nav menu to access your Outlook data.</p>
+    </div>
+
+    <!-- unsupported browser message -->
+    <div id="unsupported" class="jumbotron page">
+      <h1>Oops....</h1>
+      <p>This page requires browser support for <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API">session storage</a>. Unfortunately, your browser does not support this feature. Please visit this page using a different browser.</p>
+    </div>
+
+    <!-- error message -->
+    <div id="error-display" class="page panel panel-danger">
+      <div class="panel-heading">
+        <h3 class="panel-title" id="error-name"></h3>
+      </div>
+      <div class="panel-body">
+        <pre><code id="error-desc"></code></pre>
+      </div>
+    </div>
+
+    <!-- inbox display -->
+    <div id="inbox" class="page panel panel-default">
+      <div class="panel-heading">
+        <h1 class="panel-title">Inbox</h1>
+      </div>
+      <div id="inbox-status" class="panel-body">
+      </div>
+      <div class="list-group" id="message-list">
+      </div>
+    </div>
+
+    <!-- calendar display -->
+    <div id="calendar" class="page panel panel-default">
+      <div class="panel-heading">
+        <h1 class="panel-title">Calendar</h1>
+      </div>
+      <div id="calendar-status" class="panel-body">
+      </div>
+      <div class="list-group" id="event-list">
+      </div>
+    </div>
+
+    <!-- contacts display -->
+    <div id="contacts" class="page panel panel-default">
+      <div class="panel-heading">
+        <h1 class="panel-title">Contacts</h1>
+      </div>
+      <div id="contacts-status" class="panel-body">
+      </div>
+      <div class="list-group" id="contact-list">
+      </div>
+    </div>
+
+    <!-- token display -->
+    <div id="token-display" class="page panel panel-default">
+      <div class="panel-body">
+        <h4>Access Token:</h4>
+        <pre><code id="token"></code></pre>
+        <h4>Expires:</h4>
+        <p id="expires-display"></p>
+        <h4>ID Token:</h4>
+        <pre><code id="id-token"></code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Handlebars template for message list -->
+  <script id="msg-list-template" type="text/x-handlebars-template">
+    {{#each messages}}
+    <div class="list-group-item">
+      <h3 id="msg-from" class="list-group-item-">{{this.From.EmailAddress.Name}}</h3>
+      <h4 id="msg-subject" class="list-group-item-heading">{{this.Subject}}</h4>
+      <p id="msg-received" class="list-group-item-heading text-muted"><em>Received: {{formatDate this.ReceivedDateTime}}</em></p>
+      <p id="msg-preview" class="list-group-item-text text-muted"><em>{{this.BodyPreview}}</em></p>
+    </div>
+    {{/each}}
+  </script>
+
+  <!-- Handlebars template for event list -->
+  <script id="event-list-template" type="text/x-handlebars-template">
+    {{#each events}}
+    <div class="list-group-item">
+      <h4 id="event-subject" class="list-group-item-heading">{{this.Subject}}</h4>
+      <p id="event-start" class="list-group-item-heading">Start: {{formatDate this.Start.DateTime}}</p>
+      <p id="event-end" class="list-group-item-heading">End: {{formatDate this.End.DateTime}}</p>
+    </div>
+    {{/each}}
+  </script>
+
+  <!-- Handlebars template for contact list -->
+  <script id="contact-list-template" type="text/x-handlebars-template">
+    {{#each contacts}}
+    <div class="list-group-item">
+      <h4 id="contact-name" class="list-group-item-heading">{{this.GivenName}} {{this.Surname}}</h4>
+      <p id="contact-email" class="list-group-item-heading">Email: {{this.EmailAddresses.0.Address}}</p>
+    </div>
+    {{/each}}
+  </script>
+</body>
+</html>
