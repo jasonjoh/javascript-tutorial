@@ -60,7 +60,14 @@ $(function() {
       // Error display
       '#error': function () {
         var errorresponse = parseHashParams(hash);
-        renderError(errorresponse.error, errorresponse.error_description);
+        if (errorresponse.error === 'login_required' ||
+            errorresponse.error === 'interaction_required') {
+          // For these errors redirect the browser to the login
+          // page.
+          window.location = buildAuthUrl();
+        } else {
+          renderError(errorresponse.error, errorresponse.error_description);
+        }
       },
 
       // Display inbox

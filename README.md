@@ -687,8 +687,6 @@ Save your changes and refresh your browser. Now after logging in you should see 
 
 ### Refreshing the access token
 
-> **Note**: In order for refresh to work silently, the user must check the **Keep me signed in** box. If they don't, the browser won't have the required cookies to include in the silent token request, and it will fail. In that case, the app will have to ask the user to sign in again.
-
 Let's tackle one more OAuth task before moving on to Outlook data: refreshing tokens. Per the [Azure documentation](https://azure.microsoft.com/en-us/documentation/articles/active-directory-v2-protocols-implicit/#refreshing-tokens), the way to do this is with a hidden iframe request. Essentially we will insert an iframe into the page and have it load the Azure authentication endpoint. We'll add a few extra parameters to the URL to make it a silent request.
 
 Add the following function to `outlook-demo.js` after the `validateIdToken` function.
@@ -744,6 +742,24 @@ function getAccessToken(callback) {
 ```
 
 We'll use this method anytime we need to use the access token. The function checks if the token is about to expire. If it isn't, then it just returns the token from the session. If it is, then it refreshes the token.
+
+When making a silent token request, if there's something wrong with the user's cookie, the Azure service may return a `login_required` or `interaction_required` error, indicating that the user needs to sign in again. Let's add some code to our `#error` handler to catch those errors and redirect the browser to an interactive login. Replace the existing `#error` handler in the `render` function with the following.
+
+#### New `#error` handler in the `render` function
+
+```js
+'#error': function () {
+  var errorresponse = parseHashParams(hash);
+  if (errorresponse.error === 'login_required' ||
+      errorresponse.error === 'interaction_required') {
+    // For these errors redirect the browser to the login
+    // page.
+    window.location = buildAuthUrl();
+  } else {
+    renderError(errorresponse.error, errorresponse.error_description);
+  }
+},
+```
 
 Finally, let's add code to remove the hidden iframe once it's done its work. Add the following lines to the top of the `handleTokenResponse` function:
 
