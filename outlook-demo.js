@@ -11,6 +11,13 @@ $(function() {
     render('#unsupportedbrowser');
     return;
   }
+
+  // Check for browser support for crypto.getRandomValues
+  var cryptObj = window.crypto || window.msCrypto; // For IE11
+  if (cryptObj === undefined || cryptObj.getRandomValues === 'undefined') {
+    render('#unsupportedbrowser');
+    return;
+  }
   
   render(window.location.hash);
 
@@ -549,13 +556,17 @@ $(function() {
   // HELPER FUNCTIONS ============================
 
   function guid() {
-    function s4() {
-      return Math.floor((1 + Math.random()) * 0x10000)
-        .toString(16)
-        .substring(1);
+    var buf = new Uint16Array(8);
+    cryptObj.getRandomValues(buf);
+    function s4(num) {
+      var ret = num.toString(16);
+      while (ret.length < 4) {
+        ret = '0' + ret;
+      }
+      return ret;
     }
-    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-      s4() + '-' + s4() + s4() + s4();
+    return s4(buf[0]) + s4(buf[1]) + '-' + s4(buf[2]) + '-' + s4(buf[3]) + '-' +
+      s4(buf[4]) + '-' + s4(buf[5]) + s4(buf[6]) + s4(buf[7]);
   }
 
   function parseHashParams(hash) {

@@ -143,6 +143,13 @@ $(function() {
     render('#unsupportedbrowser');
     return;
   }
+
+  // Check for browser support for crypto.getRandomValues
+  var cryptObj = window.crypto || window.msCrypto; // For IE11
+  if (cryptObj === undefined || cryptObj.getRandomValues === 'undefined') {
+    render('#unsupportedbrowser');
+    return;
+  }
   
   render(window.location.hash);
 
@@ -213,9 +220,9 @@ $(function() {
 });
 ```
 
-This code creates a `render` method, which selectively shows parts of the page based on the current `#` value in the URL. For each supported hash value, there's a corresponding entry in the `pagemap` object. Right now there the blank value for the home page, and a new value `#unsupportedbrowser`. The very first thing the code does is check for support of the`Storage` interface. The app is going to use the [Web Storage API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API) to store access tokens, so we need to make sure the browser supports it (most modern browsers do).
+This code creates a `render` method, which selectively shows parts of the page based on the current `#` value in the URL. For each supported hash value, there's a corresponding entry in the `pagemap` object. Right now there the blank value for the home page, and a new value `#unsupportedbrowser`. The very first thing the code does is check for support of the `Storage` interface and the `crypto.getRandomValues` function. The app is going to use the [Web Storage API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API) to store access tokens, and the `crypto.getRandomValues` function to generate nonce values, so we need to make sure the browser supports them (most modern browsers do).
 
-Assuming your browser supports Web Storage, at this point refrehsing the page should show the home page as before. If you change the URL in the browser to `http://localhost:8080/#unsupportedbrowser`, you should see the nav bar at the top, but the rest of the page is blank. Let's add in a note to tell the user what happened.
+Assuming your browser supports Web Storage and `crypto.getRandomValues`, at this point refrehsing the page should show the home page as before. If you change the URL in the browser to `http://localhost:8080/#unsupportedbrowser`, you should see the nav bar at the top, but the rest of the page is blank. Let's add in a note to tell the user what happened.
 
 Open `index.html` and locate the following line:
 
@@ -230,7 +237,7 @@ Add the following code immediately after that line.
 ```HTML
 <div id="unsupported" class="jumbotron page">
   <h1>Oops....</h1>
-  <p>This page requires browser support for <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API">session storage</a>. Unfortunately, your browser does not support this feature. Please visit this page using a different browser.</p>
+  <p>This page requires browser support for <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API">session storage</a> and <a href="https://developer.mozilla.org/en-US/docs/Web/API/RandomSource/getRandomValues"><code>crypto.getRandomValues</code></a>. Unfortunately, your browser does not support one or both features. Please visit this page using a different browser.</p>
 </div>
 ```
 
@@ -299,13 +306,17 @@ Locate the `// HELPER FUNCTIONS` line, and add the following function after it.
 
 ```js
 function guid() {
-  function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000)
-      .toString(16)
-      .substring(1);
+  var buf = new Uint16Array(8);
+  cryptObj.getRandomValues(buf);
+  function s4(num) {
+    var ret = num.toString(16);
+    while (ret.length < 4) {
+      ret = '0' + ret;
+    }
+    return ret;
   }
-  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-    s4() + '-' + s4() + s4() + s4();
+  return s4(buf[0]) + s4(buf[1]) + '-' + s4(buf[2]) + '-' + s4(buf[3]) + '-' +
+    s4(buf[4]) + '-' + s4(buf[5]) + s4(buf[6]) + s4(buf[7]);
 }
 ```
 
