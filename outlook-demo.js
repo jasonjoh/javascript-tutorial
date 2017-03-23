@@ -222,7 +222,7 @@ $(function() {
       } else {
         getUserContacts(userEmail, function(contacts, error){
           if (error) {
-
+            renderError('getUserContacts failed', error);
           } else {
             $('#contacts-status').text('Here are your first 10 contacts.');
             var templateSource = $('#contact-list-template').html();
