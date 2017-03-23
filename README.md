@@ -2,6 +2,8 @@
 
 This sample app is the result of following the tutorial at [https://dev.outlook.com/restapi/tutorial/javascript](https://dev.outlook.com/restapi/tutorial/javascript). If you follow that tutorial, you should come up with something fairly close to the code in this repository.
 
+> **NOTE:** This branch (`outlook-api`) is a snapshot of the sample before it was updated to use the [Microsoft Graph API](https://developer.microsoft.com/en-us/graph/) via the [Microsoft Graph client library for JavaScript](https://github.com/microsoftgraph/msgraph-sdk-javascript). Microsoft recommends using the Microsoft Graph to access Outlook mail, calendar, and contacts. You should use the Outlook APIs directly (via https://outlook.office.com/api) only if you require a feature that is not available on the Graph endpoints. For the Graph version of this sample, see the `master` branch.
+
 ## Running the sample
 
 If you didn't follow the tutorial and just want to download this repo and try it out, you need to do a few things first.
