@@ -403,44 +403,6 @@ $(function() {
   }
 
   // OUTLOOK API FUNCTIONS =======================
-
-  function makeApiCall(options, callback) {
-    var headers = {
-      // Add the access token to the request
-      'Authorization': 'Bearer ' + options.token,
-      // Set a request ID (helpful for troubleshooting)
-      'client-request-id': guid(),
-      // Request that the client request ID be returned
-      'return-client-request-id': `true`
-    };
-
-    // If specified, set the user's email as the anchor
-    // This helps API requests route to the appropriate server
-    // more efficiently
-    if (options.email) {
-      headers['X-AnchorMailbox'] = options.email;
-    }
-
-    var ajaxOptions = {
-      url: options.url,
-      dataType: 'json',
-      type: options.method,
-      headers: headers
-    };
-
-    if (options.query) {
-      ajaxOptions['data'] = options.query;
-    }
-
-    $.ajax(ajaxOptions)
-    .done(function(response) {
-      callback(response);
-    })
-    .fail(function(error) {
-      callback(null, error);
-    });
-  }
-
   function getUserEmailAddress(callback) {
     if (sessionStorage.userEmail) {
       return sessionStorage.userEmail;
