@@ -12,6 +12,7 @@
   <script src="//ajax.aspnetcdn.com/ajax/bootstrap/3.3.6/bootstrap.min.js"></script>
   <script src="//kjur.github.io/jsrsasign/jsrsasign-latest-all-min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.min.js"></script>
+  <script src="graph-js-sdk-web.js"></script>
   <script src="outlook-demo.js"></script>
 </head>
 
@@ -122,10 +123,10 @@
   <script id="msg-list-template" type="text/x-handlebars-template">
     {{#each messages}}
     <div class="list-group-item">
-      <h3 id="msg-from" class="list-group-item-">{{this.From.EmailAddress.Name}}</h3>
-      <h4 id="msg-subject" class="list-group-item-heading">{{this.Subject}}</h4>
-      <p id="msg-received" class="list-group-item-heading text-muted"><em>Received: {{formatDate this.ReceivedDateTime}}</em></p>
-      <p id="msg-preview" class="list-group-item-text text-muted"><em>{{this.BodyPreview}}</em></p>
+      <h3 id="msg-from" class="list-group-item-">{{this.from.emailAddress.name}}</h3>
+      <h4 id="msg-subject" class="list-group-item-heading">{{this.subject}}</h4>
+      <p id="msg-received" class="list-group-item-heading text-muted"><em>Received: {{formatDate this.receivedDateTime}}</em></p>
+      <p id="msg-preview" class="list-group-item-text text-muted"><em>{{this.bodyPreview}}</em></p>
     </div>
     {{/each}}
   </script>
@@ -134,9 +135,9 @@
   <script id="event-list-template" type="text/x-handlebars-template">
     {{#each events}}
     <div class="list-group-item">
-      <h4 id="event-subject" class="list-group-item-heading">{{this.Subject}}</h4>
-      <p id="event-start" class="list-group-item-heading">Start: {{formatDate this.Start.DateTime}}</p>
-      <p id="event-end" class="list-group-item-heading">End: {{formatDate this.End.DateTime}}</p>
+      <h4 id="event-subject" class="list-group-item-heading">{{this.subject}}</h4>
+      <p id="event-start" class="list-group-item-heading">Start: {{formatDate this.start.dateTime}}</p>
+      <p id="event-end" class="list-group-item-heading">End: {{formatDate this.end.dateTime}}</p>
     </div>
     {{/each}}
   </script>
@@ -145,8 +146,8 @@
   <script id="contact-list-template" type="text/x-handlebars-template">
     {{#each contacts}}
     <div class="list-group-item">
-      <h4 id="contact-name" class="list-group-item-heading">{{this.GivenName}} {{this.Surname}}</h4>
-      <p id="contact-email" class="list-group-item-heading">Email: {{this.EmailAddresses.0.Address}}</p>
+      <h4 id="contact-name" class="list-group-item-heading">{{this.givenName}} {{this.surname}}</h4>
+      <p id="contact-email" class="list-group-item-heading">Email: {{this.emailAddresses.0.address}}</p>
     </div>
     {{/each}}
   </script>

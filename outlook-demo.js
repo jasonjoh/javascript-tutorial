@@ -1,10 +1,9 @@
 $(function() {
   // App configuration
   var authEndpoint = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?';
-  var apiEndpoint = 'https://outlook.office.com/api/v2.0';
   var redirectUri = 'http://localhost:8080';
   var appId = 'YOUR APP ID HERE';
-  var scopes = 'openid profile https://outlook.office.com/mail.read https://outlook.office.com/calendars.read https://outlook.office.com/contacts.read';
+  var scopes = 'openid profile User.Read Mail.Read Calendars.Read Contacts.Read';
 
   // Check for browser support for sessionStorage
   if (typeof(Storage) === 'undefined') {
@@ -170,12 +169,16 @@ $(function() {
         renderError('getUserEmailAddress failed', error.responseText);
       } else {
         getUserInboxMessages(userEmail, function(messages, error){
-          $('#inbox-status').text('Here are the 10 most recent messages in your inbox.');
-          var templateSource = $('#msg-list-template').html();
-          var template = Handlebars.compile(templateSource);
+          if (error) {
+            renderError('getUserInboxMessages failed', error);
+          } else {
+            $('#inbox-status').text('Here are the 10 most recent messages in your inbox.');
+            var templateSource = $('#msg-list-template').html();
+            var template = Handlebars.compile(templateSource);
 
-          var msgList = template({messages: messages});
-          $('#message-list').append(msgList);
+            var msgList = template({messages: messages});
+            $('#message-list').append(msgList);
+          }
         });
       }
     });
@@ -192,12 +195,16 @@ $(function() {
         renderError('getUserEmailAddress failed', error.responseText);
       } else {
         getUserEvents(userEmail, function(events, error){
-          $('#calendar-status').text('Here are the 10 most recently created events on your calendar.');
-          var templateSource = $('#event-list-template').html();
-          var template = Handlebars.compile(templateSource);
+          if (error) {
+            renderError('getUserEvents failed', error);
+          } else {
+            $('#calendar-status').text('Here are the 10 most recently created events on your calendar.');
+            var templateSource = $('#event-list-template').html();
+            var template = Handlebars.compile(templateSource);
 
-          var eventList = template({events: events});
-          $('#event-list').append(eventList);
+            var eventList = template({events: events});
+            $('#event-list').append(eventList);
+          }
         });
       }
     });
@@ -214,12 +221,16 @@ $(function() {
         renderError('getUserEmailAddress failed', error.responseText);
       } else {
         getUserContacts(userEmail, function(contacts, error){
-          $('#contacts-status').text('Here are your first 10 contacts.');
-          var templateSource = $('#contact-list-template').html();
-          var template = Handlebars.compile(templateSource);
+          if (error) {
 
-          var contactList = template({contacts: contacts});
-          $('#contact-list').append(contactList);
+          } else {
+            $('#contacts-status').text('Here are your first 10 contacts.');
+            var templateSource = $('#contact-list-template').html();
+            var template = Handlebars.compile(templateSource);
+
+            var contactList = template({contacts: contacts});
+            $('#contact-list').append(contactList);
+          }
         });
       }
     });
@@ -436,20 +447,24 @@ $(function() {
     } else {
       getAccessToken(function(accessToken) {
         if (accessToken) {
-          // Call the Outlook API /Me to get user email address
-          var callOptions = {
-            url: apiEndpoint + '/Me',
-            token: accessToken,
-            method: 'GET'
-          }; 
-
-          makeApiCall(callOptions, function(result, error) {
-            if (error) {
-              callback(null, error);
-            } else {
-              callback(result.EmailAddress);
+          // Create a Graph client
+          var client = MicrosoftGraph.Client.init({
+            authProvider: (done) => {
+              // Just return the token
+              done(null, accessToken);
             }
           });
+
+          // Get the Graph /Me endpoint to get user email address
+          client
+            .api('/me')
+            .get((err, res) => {
+              if (err) {
+                callback(null, err);
+              } else {
+                callback(res.mail);
+              }
+            });
         } else {
           var error = { responseText: 'Could not retrieve access token' };
           callback(null, error);
@@ -461,30 +476,28 @@ $(function() {
   function getUserInboxMessages(emailAddress, callback) {
     getAccessToken(function(accessToken) {
       if (accessToken) {
-        // Call the Outlook API
-        var callOptions = {
-          // Get messages from the inbox folder
-          url: apiEndpoint + '/Me/mailfolders/inbox/messages',
-          token: accessToken,
-          method: 'GET',
-          email: emailAddress,
-          query: {
-            // Limit to the first 10 messages
-            '$top': 10,
-            // Only return fields we will use
-            '$select': 'Subject,From,ReceivedDateTime,BodyPreview',
-            // Sort by received time, newest first
-            '$orderby': 'ReceivedDateTime DESC'
-          }
-        }; 
-
-        makeApiCall(callOptions, function(result, error) {
-          if (error) {
-            callback(null, error);
-          } else {
-            callback(result.value);
+        // Create a Graph client
+        var client = MicrosoftGraph.Client.init({
+          authProvider: (done) => {
+            // Just return the token
+            done(null, accessToken);
           }
         });
+
+        // Get the 10 newest messages
+        client
+          .api('/me/mailfolders/inbox/messages')
+          .header('X-AnchorMailbox', emailAddress)
+          .top(10)
+          .select('subject,from,receivedDateTime,bodyPreview')
+          .orderby('receivedDateTime DESC')
+          .get((err, res) => {
+            if (err) {
+              callback(null, err);
+            } else {
+              callback(res.value);
+            }
+          });
       } else {
         var error = { responseText: 'Could not retrieve access token' };
         callback(null, error);
@@ -495,30 +508,28 @@ $(function() {
   function getUserEvents(emailAddress, callback) {
     getAccessToken(function(accessToken) {
       if (accessToken) {
-        // Call the Outlook API
-        var callOptions = {
-          // Get events from the calendar
-          url: apiEndpoint + '/Me/events',
-          token: accessToken,
-          method: 'GET',
-          email: emailAddress,
-          query: {
-            // Limit to the first 10 events
-            '$top': 10,
-            // Only return fields we will use
-            '$select': 'Subject,Start,End,CreatedDateTime',
-            // Sort by created time
-            '$orderby': 'CreatedDateTime DESC'
-          }
-        }; 
-
-        makeApiCall(callOptions, function(result, error) {
-          if (error) {
-            callback(null, error);
-          } else {
-            callback(result.value);
+        // Create a Graph client
+        var client = MicrosoftGraph.Client.init({
+          authProvider: (done) => {
+            // Just return the token
+            done(null, accessToken);
           }
         });
+
+        // Get the 10 newest events
+        client
+          .api('/me/events')
+          .header('X-AnchorMailbox', emailAddress)
+          .top(10)
+          .select('subject,start,end,createdDateTime')
+          .orderby('createdDateTime DESC')
+          .get((err, res) => {
+            if (err) {
+              callback(null, err);
+            } else {
+              callback(res.value);
+            }
+          });
       } else {
         var error = { responseText: 'Could not retrieve access token' };
         callback(null, error);
@@ -529,30 +540,29 @@ $(function() {
   function getUserContacts(emailAddress, callback) {
     getAccessToken(function(accessToken) {
       if (accessToken) {
-        // Call the Outlook API
-        var callOptions = {
-          // Get contacts
-          url: apiEndpoint + '/Me/contacts',
-          token: accessToken,
-          method: 'GET',
-          email: emailAddress,
-          query: {
-            // Limit to the first 10 contacts
-            '$top': 10,
-            // Only return fields we will use
-            '$select': 'GivenName,Surname,EmailAddresses',
-            // Sort by given name alphabetically
-            '$orderby': 'GivenName ASC'
-          }
-        }; 
-
-        makeApiCall(callOptions, function(result, error) {
-          if (error) {
-            callback(null, error);
-          } else {
-            callback(result.value);
+        // Create a Graph client
+        var client = MicrosoftGraph.Client.init({
+          authProvider: (done) => {
+            // Just return the token
+            done(null, accessToken);
           }
         });
+
+        // Get the first 10 contacts in alphabetical order
+        // by given name
+        client
+          .api('/me/contacts')
+          .header('X-AnchorMailbox', emailAddress)
+          .top(10)
+          .select('givenName,surname,emailAddresses')
+          .orderby('givenName ASC')
+          .get((err, res) => {
+            if (err) {
+              callback(null, err);
+            } else {
+              callback(res.value);
+            }
+          });
       } else {
         var error = { responseText: 'Could not retrieve access token' };
         callback(null, error);
