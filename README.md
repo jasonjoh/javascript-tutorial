@@ -1,6 +1,8 @@
 # Sample JavaScript SPA app that uses the Outlook REST APIs
 
-This sample app is the result of following the tutorial at [https://dev.outlook.com/restapi/tutorial/javascript](https://dev.outlook.com/restapi/tutorial/javascript). If you follow that tutorial, you should come up with something fairly close to the code in this repository.
+This sample app is the result of following the [JavScript tutorial on the Outlook Dev Center](https://docs.microsoft.com/en-us/outlook/rest/javascript-tutorial). If you follow that tutorial, you should come up with something fairly close to the code in this repository.
+
+> **NOTE:** Looking for the version of this tutorial that used the Outlook API directly instead of Microsoft Graph? Check out the `outlook-api` branch. Note that Microsoft recommends using the Microsoft Graph to access mail, calendar, and contacts. You should use the Outlook APIs directly (via https://outlook.office.com/api) only if you require a feature that is not available on the Graph endpoints.
 
 ## Running the sample
 
