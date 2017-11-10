@@ -405,7 +405,7 @@ $(function() {
   // OUTLOOK API FUNCTIONS =======================
   function getUserEmailAddress(callback) {
     if (sessionStorage.userEmail) {
-      return sessionStorage.userEmail;
+      callback(sessionStorage.userEmail);
     } else {
       getAccessToken(function(accessToken) {
         if (accessToken) {
