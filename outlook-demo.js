@@ -424,7 +424,14 @@ $(function() {
               if (err) {
                 callback(null, err);
               } else {
-                callback(res.mail);
+                // Get result, which may be one of two values
+                // For Office 365 users, use the mail property
+                // For MSA users, use the userPrincipalName property
+                var email = res.mail ? res.mail : res.userPrincipalName;
+
+                // Store in session
+                sessionStorage.userEmail = email;
+                callback(email);
               }
             });
         } else {
