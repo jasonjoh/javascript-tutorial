@@ -163,23 +163,17 @@ $(function() {
     $('#inbox-status').text('Loading...');
     $('#message-list').empty();
     $('#inbox').show();
-    // Get user's email address
-    getUserEmailAddress(function(userEmail, error) {
-      if (error) {
-        renderError('getUserEmailAddress failed', error.responseText);
-      } else {
-        getUserInboxMessages(userEmail, function(messages, error){
-          if (error) {
-            renderError('getUserInboxMessages failed', error);
-          } else {
-            $('#inbox-status').text('Here are the 10 most recent messages in your inbox.');
-            var templateSource = $('#msg-list-template').html();
-            var template = Handlebars.compile(templateSource);
 
-            var msgList = template({messages: messages});
-            $('#message-list').append(msgList);
-          }
-        });
+    getUserInboxMessages(function(messages, error){
+      if (error) {
+        renderError('getUserInboxMessages failed', error);
+      } else {
+        $('#inbox-status').text('Here are the 10 most recent messages in your inbox.');
+        var templateSource = $('#msg-list-template').html();
+        var template = Handlebars.compile(templateSource);
+
+        var msgList = template({messages: messages});
+        $('#message-list').append(msgList);
       }
     });
   }
@@ -189,23 +183,17 @@ $(function() {
     $('#calendar-status').text('Loading...');
     $('#event-list').empty();
     $('#calendar').show();
-    // Get user's email address
-    getUserEmailAddress(function(userEmail, error) {
-      if (error) {
-        renderError('getUserEmailAddress failed', error.responseText);
-      } else {
-        getUserEvents(userEmail, function(events, error){
-          if (error) {
-            renderError('getUserEvents failed', error);
-          } else {
-            $('#calendar-status').text('Here are the 10 most recently created events on your calendar.');
-            var templateSource = $('#event-list-template').html();
-            var template = Handlebars.compile(templateSource);
 
-            var eventList = template({events: events});
-            $('#event-list').append(eventList);
-          }
-        });
+    getUserEvents(function(events, error){
+      if (error) {
+        renderError('getUserEvents failed', error);
+      } else {
+        $('#calendar-status').text('Here are the 10 most recently created events on your calendar.');
+        var templateSource = $('#event-list-template').html();
+        var template = Handlebars.compile(templateSource);
+
+        var eventList = template({events: events});
+        $('#event-list').append(eventList);
       }
     });
   }
@@ -215,23 +203,17 @@ $(function() {
     $('#contacts-status').text('Loading...');
     $('#contact-list').empty();
     $('#contacts').show();
-    // Get user's email address
-    getUserEmailAddress(function(userEmail, error) {
-      if (error) {
-        renderError('getUserEmailAddress failed', error.responseText);
-      } else {
-        getUserContacts(userEmail, function(contacts, error){
-          if (error) {
-            renderError('getUserContacts failed', error);
-          } else {
-            $('#contacts-status').text('Here are your first 10 contacts.');
-            var templateSource = $('#contact-list-template').html();
-            var template = Handlebars.compile(templateSource);
 
-            var contactList = template({contacts: contacts});
-            $('#contact-list').append(contactList);
-          }
-        });
+    getUserContacts(function(contacts, error){
+      if (error) {
+        renderError('getUserContacts failed', error);
+      } else {
+        $('#contacts-status').text('Here are your first 10 contacts.');
+        var templateSource = $('#contact-list-template').html();
+        var template = Handlebars.compile(templateSource);
+
+        var contactList = template({contacts: contacts});
+        $('#contact-list').append(contactList);
       }
     });
   }
@@ -403,46 +385,8 @@ $(function() {
   }
 
   // OUTLOOK API FUNCTIONS =======================
-  function getUserEmailAddress(callback) {
-    if (sessionStorage.userEmail) {
-      callback(sessionStorage.userEmail);
-    } else {
-      getAccessToken(function(accessToken) {
-        if (accessToken) {
-          // Create a Graph client
-          var client = MicrosoftGraph.Client.init({
-            authProvider: (done) => {
-              // Just return the token
-              done(null, accessToken);
-            }
-          });
 
-          // Get the Graph /Me endpoint to get user email address
-          client
-            .api('/me')
-            .get((err, res) => {
-              if (err) {
-                callback(null, err);
-              } else {
-                // Get result, which may be one of two values
-                // For Office 365 users, use the mail property
-                // For MSA users, use the userPrincipalName property
-                var email = res.mail ? res.mail : res.userPrincipalName;
-
-                // Store in session
-                sessionStorage.userEmail = email;
-                callback(email);
-              }
-            });
-        } else {
-          var error = { responseText: 'Could not retrieve access token' };
-          callback(null, error);
-        }
-      });
-    }
-  }
-
-  function getUserInboxMessages(emailAddress, callback) {
+  function getUserInboxMessages(callback) {
     getAccessToken(function(accessToken) {
       if (accessToken) {
         // Create a Graph client
@@ -456,7 +400,6 @@ $(function() {
         // Get the 10 newest messages
         client
           .api('/me/mailfolders/inbox/messages')
-          .header('X-AnchorMailbox', emailAddress)
           .top(10)
           .select('subject,from,receivedDateTime,bodyPreview')
           .orderby('receivedDateTime DESC')
@@ -474,7 +417,7 @@ $(function() {
     });
   }
 
-  function getUserEvents(emailAddress, callback) {
+  function getUserEvents(callback) {
     getAccessToken(function(accessToken) {
       if (accessToken) {
         // Create a Graph client
@@ -488,7 +431,6 @@ $(function() {
         // Get the 10 newest events
         client
           .api('/me/events')
-          .header('X-AnchorMailbox', emailAddress)
           .top(10)
           .select('subject,start,end,createdDateTime')
           .orderby('createdDateTime DESC')
@@ -506,7 +448,7 @@ $(function() {
     });
   }
 
-  function getUserContacts(emailAddress, callback) {
+  function getUserContacts(callback) {
     getAccessToken(function(accessToken) {
       if (accessToken) {
         // Create a Graph client
@@ -521,7 +463,6 @@ $(function() {
         // by given name
         client
           .api('/me/contacts')
-          .header('X-AnchorMailbox', emailAddress)
           .top(10)
           .select('givenName,surname,emailAddresses')
           .orderby('givenName ASC')
